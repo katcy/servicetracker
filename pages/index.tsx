@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import classnames from "classnames";
+import { useEffect, useState, FC, createContext } from "react";
+import { useRouter } from "next/router";
+
+import Records from "./records";
+import { Alert, Loading, alertVariants } from "../components";
 
 import supabase from "../services/dbConfig";
 
@@ -17,107 +19,85 @@ Blue Grotto
 Slate
 #9CA6B8
 */
-const SERVICE_PARAMS = {
-  odometer: "Odometer",
-  serviceDate: "Service Date",
-  engineOilChanged: "Engine Oil Changed",
-  oilFilterChanged: "Oil Filter Changed",
-  cabinAirFilterChanged: "Cabin Air Filter Changed",
-  airFilterChanged: "Air Filter Changed",
-  gearboxOilChanged: "Gearbox Oil Changed",
-  cleanedBrakePads: "Cleaned Brake Pads",
-  brakePadsChanged: "Brake Pads Changed",
-  dieselFilterChanged: "Diesel Filter Changed",
-  wheelAlignmentDone: "Wheel Alignment",
-};
 
-const recordTypes = {
-  boolean: (checked: boolean) => (
-    <input type="checkbox" defaultChecked={checked} />
-  ),
-  string: (servicedDate: string) => <span>{servicedDate}</span>,
-  number: (odometer: string) => <span>{odometer}</span>,
-};
+export const UserContext = createContext({});
 
-export default function Home() {
-  const [vehicleRecords, setVehicleRecords] = useState<any[] | null>([]);
-  const [refresh, setRefresh] = useState(false);
+const Login: FC = () => {
+  const router = useRouter();
 
-  const fetchRecords = async () => {
-    const { data, error } = await supabase
-      .from("servicehistory")
-      .select(`*,vehicle_number(nick_name,vehicle_number)`);
-    setVehicleRecords(data);
+  const [email, setEmail] = useState<string>("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<unknown>();
+
+  const getUserDetails = async () => {
+    const {
+      data: { user: authUser },
+      error,
+    } = await supabase.auth.getUser();
+    if (!error) {
+      setUser(authUser);
+      setIsAuthenticated(authUser?.role === "authenticated" ? true : false);
+      localStorage.setItem("supabase", JSON.stringify(authUser));
+      router.push("/records");
+    }
+    setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchRecords();
+    setIsLoading(true);
+    getUserDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const signinWithMagicLink = async () => {
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+    });
+    if (!error) {
+      setEmailSent(true);
+    }
+  };
+
   return (
-    <div>
-      <main className="vw-100 mx-auto">
-        {(vehicleRecords || []).map(
-          (
-            {
-              id,
-              lastUpdated,
-              serviceRecords,
-              vehicle_number: { nick_name, vehicle_number },
-            },
-            vehicleIndex
-          ) => {
-            const serviceParams = Object.values(SERVICE_PARAMS);
-            const lastServicedDate = serviceRecords[0].serviceDate;
-            return (
-              <article
-                className={classnames("card w-75 p-2 mb-4", {
-                  "mt-4": vehicleIndex !== 0,
-                })}
-                key={id}
-              >
-                <div className="d-flex justify-content-evenly">
-                  <h3 className="card-title">
-                    {nick_name} - {vehicle_number}
-                    <span className="ms-4 fst-italic text-secondary">
-                      Last Serviced: {lastServicedDate}
-                    </span>
-                  </h3>
-                  <Link
-                    className="btn btn-primary"
-                    href={`/update-record/${vehicle_number}`}
-                  >
-                    Add Service
-                  </Link>
-                </div>
-                <div className="card-body">
-                  {/* {console.log(serviceHistory)} */}
-                  <table className="table table-striped table-bordered">
-                    <thead>
-                      <tr>
-                        {serviceParams.map((param) => (
-                          <th key={param}>{param}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {serviceRecords.map((record, recordIndex) => (
-                        <tr key={recordIndex}>
-                          {Object.values(record).map((rec, recIndex) => (
-                            <td key={recIndex}>
-                              {recordTypes[typeof rec](rec)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
-            );
-          }
-        )}
-      </main>
-    </div>
+    <UserContext.Provider value={{ isAuthenticated, user }}>
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <main className="container">
+          <div className="col-sm-12 col-md-6 col-lg-6 mx-auto p-5">
+            <h1>Login Page</h1>
+            {emailSent && (
+              <Alert message="Email Sent!" variant={alertVariants.INFO} />
+            )}
+
+            <form>
+              <label className="form-label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                className="form-control"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+              />
+            </form>
+            <button
+              className="btn btn-primary mt-4"
+              onClick={signinWithMagicLink}
+              disabled={emailSent}
+            >
+              Sign in
+            </button>
+          </div>
+        </main>
+      )}
+    </UserContext.Provider>
   );
+};
+
+export default function Home() {
+  return <Login />;
 }
