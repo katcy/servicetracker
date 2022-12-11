@@ -30,3 +30,27 @@ export type ServiceFormFieldProps = {
   formData: IServiceType;
   onChange: Dispatch<SetStateAction<IServiceType>>;
 };
+
+export type ServiceRecord = {
+  odometer: string;
+  serviceDate: string;
+  airFilterChanged: boolean;
+  brakePadsChanged: boolean;
+  cleanedBrakePads: boolean;
+  engineOilChanged: boolean;
+  oilFilterChanged: boolean;
+  gearboxOilChanged: boolean;
+  wheelAlignmentDone: boolean;
+  dieselFilterChanged: boolean;
+  cabinAirFilterChanged: boolean;
+};
+
+export type ServiceRecords = ServiceRecord[];
+
+export type VehicleRecords = {
+  id: number;
+  vehicle_number: { vehicle_number: string; nick_name: string };
+  serviceRecords: ServiceRecords;
+  lastUpdated: string;
+  user_id: string;
+};

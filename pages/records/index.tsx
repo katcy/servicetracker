@@ -1,19 +1,12 @@
-import {
-  Dispatch,
-  SetStateAction,
-  useEffect,
-  useState,
-  FC,
-  createContext,
-  useContext,
-} from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import classnames from "classnames";
 
-import { UserContext } from "../index";
 import supabase from "../../services/dbConfig";
 import { logout } from "../../services/index";
+
+import { VehicleRecords } from "../../types/types";
 
 const SERVICE_PARAMS = {
   odometer: "Odometer",
@@ -29,24 +22,24 @@ const SERVICE_PARAMS = {
   wheelAlignmentDone: "Wheel Alignment",
 };
 
-const recordTypes = {
-  boolean: (checked: boolean) => (
-    <input type="checkbox" defaultChecked={checked} />
+const recordTypes: Record<string, (val: string | boolean) => JSX.Element> = {
+  boolean: (checked) => (
+    <input type="checkbox" defaultChecked={checked as boolean} />
   ),
-  string: (servicedDate: string) => <span>{servicedDate}</span>,
-  number: (odometer: string) => <span>{odometer}</span>,
+  string: (servicedDate) => <span>{servicedDate}</span>,
+  number: (odometer) => <span>{odometer}</span>,
 };
 
 const Records = () => {
   const router = useRouter();
-  const [vehicleRecords, setVehicleRecords] = useState<any[] | null>([]);
+  const [vehicleRecords, setVehicleRecords] = useState<VehicleRecords[]>([]);
   const [refresh, setRefresh] = useState(false);
 
   const fetchRecords = async () => {
     const { data, error } = await supabase
       .from("servicehistory")
       .select(`*,vehicle_number(nick_name,vehicle_number)`);
-    setVehicleRecords(data);
+    setVehicleRecords(data as VehicleRecords[]);
   };
 
   useEffect(() => {

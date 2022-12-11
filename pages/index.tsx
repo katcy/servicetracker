@@ -48,6 +48,7 @@ const Login: FC = () => {
   useEffect(() => {
     setIsLoading(true);
     getUserDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const signinWithMagicLink = async () => {

@@ -1,16 +1,12 @@
-import { FC, useContext, useState } from "react";
+import { FC, useState } from "react";
 import { useRouter } from "next/router";
 
-import { UserContext } from "../index";
 import { addNewVehicle, addEmptyServiceRecords } from "../../services/index";
 
 const NewVehicle: FC = () => {
   const router = useRouter();
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [nickName, setNickName] = useState("");
-
-  const { user } = useContext(UserContext);
-  console.log("🚀 ~ file: index.tsx:13 ~ user", user);
 
   return (
     <main className="container">
