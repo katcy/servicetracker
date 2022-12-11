@@ -33,3 +33,33 @@ export const updateServiceRecords = async (
 
   return { data, error };
 };
+
+export const logout = async () => {
+  const { error } = await supabase.auth.signOut();
+  return error;
+};
+
+export const addNewVehicle = async (
+  vehicle_number: string,
+  nick_name: string
+) => {
+  const userInfo = JSON.parse(localStorage.getItem("supabase") || "{}");
+
+  const { data, error } = await supabase
+    .from("vehicles")
+    .insert({ vehicle_number, nick_name, user_id: userInfo.id });
+
+  return { data, error };
+};
+
+export const addEmptyServiceRecords = async (vehicle_number: string) => {
+  const userInfo = JSON.parse(localStorage.getItem("supabase") || "{}");
+
+  const { data, error } = await supabase.from("servicehistory").insert({
+    vehicle_number,
+    serviceRecords: [],
+    user_id: userInfo.id,
+  });
+
+  return { data, error };
+};
